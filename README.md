@@ -75,5 +75,36 @@ CREATE TABLE procedures (
 );
 
 --
--- Table structure for table `procedures`
+-- Table structure for table `encounters`
 --
+
+CREATE TABLE encounters (
+  Id CHAR(36) PRIMARY KEY,
+  START DATETIME NOT NULL,
+  STOP DATETIME NOT NULL,
+  PATIENT CHAR(36) NOT NULL,
+  ORGANIZATION CHAR(36) NOT NULL,
+  PAYER CHAR(36) NOT NULL,
+  ENCOUNTERCLASS VARCHAR(50),
+  CODE VARCHAR(20),
+  DESCRIPTION VARCHAR(255),
+  BASE_ENCOUNTER_COST DECIMAL(10,2),
+  TOTAL_CLAIM_COST DECIMAL(10,2),
+  PAYER_COVERAGE DECIMAL(10,2),
+  REASONCODE VARCHAR(20),
+  REASONDESCRIPTION VARCHAR(255)
+);
+
+## Business Problems and Solutions
+
+### OBJECTIVE 1: ENCOUNTERS OVERVIEW
+
+### a. How many total encounters occurred each year?
+```sql
+SELECT 
+YEAR(START) AS 'Year',
+COUNT(ID) AS Encounter_Count
+from encounters
+GROUP BY 1
+ORDER BY 1;
+```
