@@ -94,7 +94,7 @@ CREATE TABLE encounters (
   REASONCODE VARCHAR(20),
   REASONDESCRIPTION VARCHAR(255)
 );
-
+```
 ## Business Problems and Solutions
 
 ### OBJECTIVE 1: ENCOUNTERS OVERVIEW
