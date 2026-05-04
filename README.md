@@ -108,3 +108,104 @@ from encounters
 GROUP BY 1
 ORDER BY 1;
 ```
+### b. For each year, what percentage of all encounters belonged to each encounter class
+-- (ambulatory, outpatient, wellness, urgent care, emergency, and inpatient)?
+```sql
+SELECT 
+YEAR(START) AS 'Year', 
+ROUND(SUM(CASE WHEN ENCOUNTERCLASS = 'ambulatory' THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS Ambulatory,
+ROUND(SUM(CASE WHEN ENCOUNTERCLASS = 'outpatient' THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS Outpatient,
+ROUND(SUM(CASE WHEN ENCOUNTERCLASS = 'wellness' THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS Wellness,
+ROUND(SUM(CASE WHEN ENCOUNTERCLASS = 'urgentcare' THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS Urgentcare,
+ROUND(SUM(CASE WHEN ENCOUNTERCLASS = 'emergency' THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS Emergency,
+ROUND(SUM(CASE WHEN ENCOUNTERCLASS = 'inpatient' THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS Inpatient
+FROM encounters
+GROUP BY 1
+ORDER BY 1;
+```
+### c. What percentage of encounters were over 24 hours versus under 24 hours?
+```sql
+SELECT
+ROUND(SUM(CASE WHEN timestampdiff(HOUR,START,STOP) > 24 THEN 1 ELSE 0 END )/COUNT(*)*100,1) AS 'OVER 24 HOURS',
+ROUND(SUM(CASE WHEN timestampdiff(HOUR,START,STOP) = 24 THEN 1 ELSE 0 END )/COUNT(*)*100,1) AS '24 HOURS',
+ROUND(SUM(CASE WHEN timestampdiff(HOUR,START,STOP)< 24 THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS 'UNDER 24 HOURS'
+FROM 
+encounters;
+```
+### OBJECTIVE 2: COST & COVERAGE INSIGHTS
+
+### a. How many encounters had zero payer coverage, and what percentage of total encounters does this represent?
+```sql
+select 
+SUM(CASE WHEN PAYER_COVERAGE = 0 THEN 1 ELSE 0 END) AS 'Zero payer coverage',
+ROUND(SUM(CASE WHEN PAYER_COVERAGE = 0 THEN 1 ELSE 0 END)/COUNT(*)*100,1) AS 'Percentage of zero payer coverage'
+from
+encounters;
+```
+### b. What are the top 10 most frequent procedures performed and the average base cost for each?
+```sql
+select 
+CODE,DESCRIPTION ,COUNT(*) AS total_count,ROUND(AVG(BASE_COST),2) as avg_cost
+from procedures
+group by 1,2
+order by 3 desc
+limit 10;
+```
+### c. What are the top 10 procedures with the highest average base cost and the number of times they were performed?
+```sql
+select CODE,DESCRIPTION,ROUND(AVG(BASE_COST),2) as avg_cost,COUNT(DESCRIPTION) AS total_count
+from procedures
+group by 1,2
+order by 3 desc
+limit 10;
+```
+### d. What is the average total claim cost for encounters, broken down by payer?
+```sql
+select 
+p.NAME as payer, ROUND(AVG(e.TOTAL_CLAIM_COST),2) as avg_total_claim_cost
+from encounters e
+left join payers p 
+on e.PAYER =p.ID
+group by 1
+order by 2 desc;
+```
+### OBJECTIVE 3: PATIENT BEHAVIOR ANALYSIS
+
+### a. How many unique patients were admitted each quarter over time?
+```sql
+select YEAR(START) AS 'YEAR',QUARTER(START) AS 'QUARTER',
+COUNT(distinct PATIENT) as unique_patients
+from encounters
+group by 1,2
+Order by 1;
+```
+### b. How many patients were readmitted within 30 days of a previous encounter?
+```sql
+With cte as (select 
+PATIENT,START,STOP,
+LEAD(START) over (partition by PATIENT order by START) AS next_start_date
+from
+encounters)
+select
+COUNT(distinct PATIENT) AS num_patients
+from
+cte
+where
+datediff(next_start_date,STOP) < 30;
+```
+### c. Which patients had the most readmissions?
+```sql
+With cte as (select 
+PATIENT,START,STOP,
+LEAD(START) over (partition by PATIENT order by START) AS next_start_date
+from
+encounters)
+select
+PATIENT,COUNT(*) AS num_readmissions
+from
+cte
+where
+datediff(next_start_date,STOP) < 30
+group by 1
+order by 2 desc;
+```
